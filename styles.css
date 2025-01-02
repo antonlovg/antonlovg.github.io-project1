@@ -1,0 +1,75 @@
+/* Grundläggande reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Body-stil */
+  body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background: #f0f0f0; /* Lätt gråbakgrund */
+    color: #333;         /* Textfärg */
+  }
+  
+  /* Header */
+  header {
+    background: #4f6d7a;
+    color: #fff;
+    padding: 2rem;
+    text-align: center;
+  }
+  
+  /* Navigation */
+  nav {
+    background: #ddd;
+    padding: 1rem;
+  }
+  nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+  }
+  nav ul li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+  }
+  nav ul li a:hover {
+    color: #4f6d7a;
+  }
+  
+  /* Main */
+  main {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    box-shadow: 0px 0px 5px rgba(0,0,0,0.1);
+  }
+  
+  /* Knapp */
+  button {
+    background: #4f6d7a;
+    color: #fff;
+    padding: 1rem 2rem;
+    border: none;
+    cursor: pointer;
+    margin-top: 1rem;
+    border-radius: 5px;
+  }
+  button:hover {
+    background: #395058;
+  }
+  
+  /* Footer */
+  footer {
+    background: #4f6d7a;
+    color: #fff;
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+  }
+  
