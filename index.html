@@ -1,133 +1,397 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Jaknara</title>
+  <title>Discord Links with Toggle Menu + Emoji Rain</title>
 
-  <!-- Bootstrap CSS -->
+  <!-- Bootstrap CSS (v5.3.0) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-  <!-- Egna stilar -->
+
+  <!-- Custom styles -->
   <style>
-    /* Bakgrundsgradient i mörkt läge */
+    /* Default to dark mode (we'll dynamically switch to .light-mode if toggled) */
     body {
       background: linear-gradient(135deg, #0f0f0f 0%, #1c1c1c 100%);
       color: #eee;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      transition: background 0.3s, color 0.3s;
+      /* Animations ON by default => .animations-off will disable them */
     }
 
-    /* Snygg navigation högst upp */
-    .navbar-dark .navbar-brand {
-      color: #ff007a;
-      /* Byt ut till valfri färg om du vill */
+    /* Light mode overrides */
+    body.light-mode {
+      background: #f8f9fa;
+      /* Light gray background */
+      color: #212529;
+      /* Dark text color */
     }
 
-    .navbar-dark .navbar-brand:hover {
-      color: #ff66b2;
+    /* Navbar brand color in dark mode */
+    .navbar-brand {
+      color: #ff007a !important;
     }
 
-    /* "Glas-liknande" container */
+    .navbar-brand:hover {
+      color: #ff66b2 !important;
+    }
+
+    /* Glassy box (container) */
     .glass-box {
       background: rgba(255, 255, 255, 0.05);
-      /* svag vit ton */
       backdrop-filter: blur(10px);
-      /* suddig bakgrundseffekt */
       border-radius: 1rem;
       padding: 2rem;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      transition: background 0.3s;
     }
 
-    /* Lista-länkarna */
+    /* In light mode, make the box a little lighter */
+    body.light-mode .glass-box {
+      background: rgba(255, 255, 255, 0.65);
+      color: #212529;
+    }
+
+    /* List group items (links) */
     .list-group-item {
       background: transparent;
-      /* Genomskinlig för att glasyta ska lysa igenom */
       border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #eee;
+      color: inherit;
       transition: all 0.3s ease;
     }
 
+    /* Animations ON (default) => shift links on hover */
     .list-group-item:hover {
       background: rgba(255, 255, 255, 0.1);
-      cursor: pointer;
       transform: translateX(5px);
-      /* liten "hover"-förskjutning */
+      cursor: pointer;
     }
 
-    /* Badgen för "Ny!" */
+    /* Light mode + animations on */
+    body.light-mode .list-group-item:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    /* If .animations-off is on body => remove transform on hover */
+    body.animations-off .list-group-item:hover {
+      transform: none;
+    }
+
+    /* Badge color (neon pink) */
     .bg-primary {
       background-color: #ff007a !important;
-      /* Byt ut till valfri färg */
     }
 
-    /* Sidfot text */
+    /* Footer text color */
     footer {
       color: #aaa;
+      transition: color 0.3s;
+    }
+
+    /* Footer color in light mode */
+    body.light-mode footer {
+      color: #6c757d;
+    }
+
+    /* Coming soon box */
+    .coming-soon {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      transition: background 0.3s;
+    }
+
+    /* Coming soon box in light mode */
+    body.light-mode .coming-soon {
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    /* Social icons container */
+    .social-icons a {
+      margin: 0 5px;
+      color: #aaa;
+      transition: color 0.2s;
+    }
+
+    .social-icons a:hover {
+      color: #ff007a;
+    }
+
+    /* Emoji rain container: 
+       We'll place absolutely positioned emojis here and let them fall down.
+    */
+    #emojiRainContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      /* so we can click through it */
+      overflow: hidden;
+      z-index: 9999;
+      /* on top of everything */
+    }
+
+    .emoji {
+      position: absolute;
+      font-size: 2rem;
+      user-select: none;
+      /* prevent user from highlighting emojis */
+      animation: fall linear forwards;
+    }
+
+    /* Keyframe for falling from top to bottom */
+    @keyframes fall {
+      0% {
+        transform: translateY(-100px);
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(100vh);
+        opacity: 0;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- Navigation -->
+  <!-- Emoji Rain Container (hidden by default, we just spawn emojis here) -->
+  <div id="emojiRainContainer"></div>
+
+  <!-- Navbar with offcanvas toggle button -->
   <nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="#">
-        <span class="fs-4">Discord Links</span>
+    <div class="container d-flex justify-content-between">
+      <!-- Navbar brand -->
+      <a class="navbar-brand fw-bold fs-4" href="#">
+        Discord Links
       </a>
+      <!-- Offcanvas toggle button (hamburger) -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu"
+        aria-controls="offcanvasMenu" aria-label="Toggle menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
     </div>
   </nav>
 
-  <!-- Huvudinnehåll -->
+  <!-- Offcanvas menu (right side) -->
+  <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasMenu"
+    aria-labelledby="offcanvasMenuLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="offcanvasMenuLabel">Settings</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <!-- Dark/Light Mode Toggle -->
+      <div class="mb-4">
+        <label class="form-check-label" for="darkModeToggle">
+          Dark/Light Mode
+        </label>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="darkModeToggle" />
+        </div>
+      </div>
+
+      <!-- Animations Toggle (we set it to "Disable Animations") -->
+      <div class="mb-4">
+        <label class="form-check-label" for="animationsToggle">
+          Disable Animations
+        </label>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="animationsToggle" />
+        </div>
+      </div>
+
+      <!-- Emoji Rain button -->
+      <div class="mb-4">
+        <button class="btn btn-primary w-100" id="emojiRainBtn">
+          Start Emoji Rain
+        </button>
+      </div>
+
+      <!-- More toggles or links can be added here -->
+      <hr />
+      <p>
+        Any problem? Contact .jakken on Discord
+      </p>
+    </div>
+  </div>
+
+  <!-- Main content -->
   <main class="container my-5 flex-grow-1">
     <div class="row justify-content-center">
       <div class="col-md-8">
         <div class="glass-box">
-          <h1 class="text-center mb-4">A collection of Jakken and Rinaras servers</h1>
+          <h1 class="text-center mb-4">A collection of Discord servers</h1>
           <p class="lead text-center mb-5">
-            If any link doesnt work, add .jakken on Discord and let me know
+            If any link doesn’t work, add .jakken on Discord and let me know.
           </p>
+
+          <!-- List group of Discord links -->
           <div class="list-group">
-            <!-- Discord 1 -->
+            <!-- Discord link 1 -->
             <a href="https://discord.gg/tRHtRBjD5J"
-              class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
+              target="_blank" rel="noopener noreferrer">
               <div class="ms-2 me-auto">
                 <div class="fw-bold">♱ 𝓜𝓲𝓼𝓪 𝓗𝓸𝓾𝓼𝓮 ♱</div>
-                Death Note Killer Within-server for an easy way to play together
+                Death Note Killer Within-server for an easy way to play together.
               </div>
               <span class="badge bg-primary rounded-pill">New!</span>
             </a>
 
-            <!-- Discord 2 -->
+            <!-- Discord link 2 -->
             <a href="https://discord.gg/45T33Y6XRJ"
-              class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
+              target="_blank" rel="noopener noreferrer">
               <div class="ms-2 me-auto">
                 <div class="fw-bold">The Pug Server ™</div>
-                If you want to join our runs in World of Warcraft (currently on a break from WoW)
+                Join our runs in World of Warcraft (currently on a break from WoW).
               </div>
             </a>
 
-            <!-- Discord 3 -->
-            <a href="https://discord.gg/dSjpKmTZ69" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+            <!-- Discord link 3 -->
+            <a href="https://discord.gg/dSjpKmTZ69"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
+              target="_blank" rel="noopener noreferrer">
               <div class="ms-2 me-auto">
                 <div class="fw-bold">Jakken's Server</div>
-                If you are from Scandinavia, we use this for some variety games sometimes, no English allowed here
+                If you are from Scandinavia, we use this server for variety games. (No English allowed!)
               </div>
             </a>
           </div>
+        </div>
+
+        <!-- Optional "Coming Soon" section -->
+        <div class="coming-soon mt-5">
+          <h2>Coming Soon...</h2>
+          <p class="mt-3">
+            This site might expand in the future, keep an eye out for more features.
+          </p>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- Footer -->
+  <!-- Footer with optional social icons -->
   <footer class="text-center py-4">
-    <p class="mb-0">© 2025 - Created by Jakken with Bootstrap v5.3.0</p>
+    <div class="social-icons mb-3">
+      <!-- Uncomment and replace '#' with real links if you have them 
+           Also remember to include Font Awesome if you want fancy icons 
+           <i class="fab fa-twitter"></i>, etc.
+      -->
+      <!--
+      <a href="#" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter"></i></a>
+      <a href="#" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+      <a href="#" target="_blank" rel="noopener noreferrer"><i class="fab fa-discord"></i></a>
+      -->
+    </div>
+    <p class="mb-0">
+      © 2025 - Created by Jakken with
+      <a href="https://getbootstrap.com/docs/5.3/getting-started/introduction/" target="_blank"
+        rel="noopener noreferrer" class="text-decoration-none">
+        Bootstrap v5.3.0
+      </a>
+    </p>
   </footer>
 
-  <!-- Bootstrap JS (inkl. Popper) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS (with Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+
+  <!-- Simple JS for toggles (dark/light mode + animations) & emoji rain -->
+  <script>
+    // Grab toggles and elements
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const animationsToggle = document.getElementById('animationsToggle');
+    const emojiRainBtn = document.getElementById('emojiRainBtn');
+    const emojiRainContainer = document.getElementById('emojiRainContainer');
+
+    // On page load, read user preference from localStorage
+    window.addEventListener('DOMContentLoaded', () => {
+      // By default, animations are ON, so we only set .animations-off if user previously disabled them
+      const isAnimationsDisabled = localStorage.getItem('animationsDisabled') === 'true';
+      animationsToggle.checked = isAnimationsDisabled;
+      document.body.classList.toggle('animations-off', isAnimationsDisabled);
+
+      // By default, dark mode is on, so check if user turned on light mode
+      const isLightMode = localStorage.getItem('lightMode') === 'true';
+      darkModeToggle.checked = isLightMode;
+      document.body.classList.toggle('light-mode', isLightMode);
+    });
+
+    // Dark/Light mode switch
+    darkModeToggle.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      document.body.classList.toggle('light-mode', checked);
+      // Save preference to localStorage
+      localStorage.setItem('lightMode', checked);
+    });
+
+    // Animations switch => "Disable Animations"
+    animationsToggle.addEventListener('change', (e) => {
+      const checked = e.target.checked; // checked => disable => animations-off
+      document.body.classList.toggle('animations-off', checked);
+      // Save preference to localStorage
+      localStorage.setItem('animationsDisabled', checked);
+    });
+
+    // Emoji Rain logic
+    emojiRainBtn.addEventListener('click', () => {
+      // We'll spawn a certain number of emojis that fall from top to bottom
+      const emojis = ['\u{1F388}', '\u{1F308}', '\u{1F31F}', '\u{2B50}', '\u{1F389}', '\u{1F496}'];
+      // Balloons, rainbow, sparkles, star, party popper, sparkly heart for example
+
+      // How many emojis we want to spawn
+      const count = 50;
+      for (let i = 0; i < count; i++) {
+        createFallingEmoji(emojis[Math.floor(Math.random() * emojis.length)]);
+      }
+    });
+
+    function createFallingEmoji(emoji) {
+      // Create a span element for the emoji
+      const span = document.createElement('span');
+      span.textContent = emoji;
+      span.classList.add('emoji');
+
+      // Random horizontal start position
+      const startLeft = Math.random() * 100; // in vw
+      span.style.left = startLeft + 'vw';
+
+      // Random duration for the fall
+      const fallDuration = 3 + Math.random() * 2; // 3-5 seconds
+      span.style.animationDuration = fallDuration + 's';
+
+      // Append to container
+      emojiRainContainer.appendChild(span);
+
+      // Remove the element after animation ends
+      setTimeout(() => {
+        span.remove();
+      }, fallDuration * 50000);
+    }
+  </script>
+
+  <!-- Optional: Font Awesome for icons (uncomment if needed) -->
+  <!--
+  <script 
+    src="https://kit.fontawesome.com/YOUR_KIT_CODE.js" 
+    crossorigin="anonymous">
+  </script>
+  -->
 </body>
 
 </html>
